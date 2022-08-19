@@ -13,4 +13,12 @@ Route::prefix('voip')->middleware('voip.log')->namespace('App\Http\Controllers\V
       });
     });
   });
+
+  Route::prefix('voice')->namespace('Voice')->group(function () {
+    Route::prefix('call')->group(function () {
+      Route::post('answer', 'CallingController@answer');
+      Route::post('status/{call_sid?}', 'CallingController@status');
+      Route::post('fallback/{call_sid?}', 'CallingController@fallback');
+    });
+  });
 });
