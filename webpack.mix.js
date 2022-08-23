@@ -1,5 +1,18 @@
 const mix = require('laravel-mix');
+const AutoImport = require('unplugin-auto-import/webpack')
+const Components = require('unplugin-vue-components/webpack')
+const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
 
+module.exports = {
+    plugins: [
+        AutoImport({
+            resolvers: [ElementPlusResolver()],
+        }),
+        Components({
+            resolvers: [ElementPlusResolver()],
+        }),
+    ],
+}
 /*
  |--------------------------------------------------------------------------
  | Mix Asset Management
@@ -12,6 +25,7 @@ const mix = require('laravel-mix');
  */
 
 mix.js('resources/js/app.js', 'public/js')
+    .vue()
     .postCss('resources/css/app.css', 'public/css', [
         //
     ]);

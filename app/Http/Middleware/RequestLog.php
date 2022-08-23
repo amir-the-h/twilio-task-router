@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class VoipLog
+class RequestLog
 {
     /**
      * Handle an incoming request.
@@ -26,7 +26,6 @@ class VoipLog
 
         Log::debug($request->path(), [
             'request' => $parameters,
-            'request_headers' => $request->headers->all(),
         ]);
         // do your thing
         return $next($request);

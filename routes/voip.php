@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('voip')->middleware('voip.log')->namespace('App\Http\Controllers\Voip')->group(function () {
+Route::prefix('voip')->namespace('App\Http\Controllers\Voip')->group(function () {
   Route::prefix('task-router')->namespace('TaskRouter')->group(function () {
     Route::prefix('workspaces/{workspace_sid}')->group(function () {
       Route::post('callback', 'WorkspaceController@callback');
