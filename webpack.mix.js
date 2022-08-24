@@ -26,6 +26,7 @@ module.exports = {
 
 mix.js('resources/js/app.js', 'public/js')
     .vue()
+    // .copy('node_modules/@twilio/voice-sdk/dist/twilio.min.js', 'public/js/twilio.min.js')
     .postCss('resources/css/app.css', 'public/css', [
         //
     ]);

@@ -35,6 +35,7 @@ return [
         'auth_token' => env('TWILIO_AUTH_TOKEN'),
         'api_key' => env('TWILIO_API_KEY'),
         'api_secret' => env('TWILIO_API_SECRET'),
+        'twiml_app_sid' => env('TWILIO_TWIML_APP_SID'),
         'phone_number_sid' => env('TWILIO_PHONE_NUMBER_SID'),
         'workspace_sid' => env('TWILIO_TASK_ROUTER_WORKSPACE_SID'),
         'workflow_sid' => env('TWILIO_TASK_ROUTER_WORKFLOW_SID'),
