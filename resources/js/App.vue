@@ -21,25 +21,47 @@ const status = computed(() => {
   if (state.value.loadings.login) {
     return "Logging in...";
   }
-  if (state.value.worker_token !== null && state.value.worker === null) {
+
+  if (!state.value.worker_token && !state.value.worker) {
     return "Authenticating with Twilio...";
   }
-  return state.value.worker !== null ? "Connected" : "Not connected";
+
+  if (!state.value.device) {
+    return "Initializing WebRTC...";
+  }
+
+  if (state.value.worker) {
+    if (state.value.worker.friendlyName) {
+      return `Connected ${state.value.worker.friendlyName}`;
+    }
+
+    return "Connected";
+  }
+
+  return "Not connected";
 });
 
-const activityName = computed(() => {
+const findCurrentActivity = () => {
   const worker = toRaw(state.value.worker);
   if (!worker) {
-    return "Activities";
+    return null;
   }
 
   // find the activity name from the activities array
   const activities = toRaw(state.value.activities);
-  const activity = activities.find(
+  return activities.find(
     (activity) => activity.sid === state.value.worker.activitySid
   );
+};
 
-  return activity ? activity.friendlyName : "Activities";
+const activityName = computed(() => {
+  const currentActivity = findCurrentActivity();
+  return currentActivity ? currentActivity.friendlyName : "Activities";
+});
+
+const defaultActivityIndex = computed(() => {
+  const currentActivity = findCurrentActivity();
+  return currentActivity ? currentActivity.sid : null;
 });
 
 const login = () => {
@@ -66,10 +88,10 @@ const login = () => {
 };
 
 const setupWorker = () => {
-  const worker = new Twilio.TaskRouter.Worker(state.value.worker_token);
+  let worker = new Twilio.TaskRouter.Worker(state.value.worker_token);
 
   worker.on("ready", (readyWorker) => {
-    worker.activitySid = readyWorker.activitySid;
+    state.value.worker = mergeWorkers(readyWorker);
     console.log(`Worker ${readyWorker.sid} is now ready for work`);
   });
 
@@ -114,6 +136,7 @@ const setupWebrtc = () => {
   });
   device.on("disconnect", (connection) => {
     completeTask();
+    console.log("Disconnected", connection);
   });
   state.value.device = device;
 };
@@ -148,7 +171,7 @@ const changeActivity = (activitySid) => {
       console.log(error.code);
       console.log(error.message);
     } else {
-      state.value.worker = worker;
+      state.value.worker = mergeWorkers(worker);
     }
     state.value.loadings.activities = false;
   });
@@ -220,25 +243,36 @@ const actionReservation = (reservation, action) => {
 const completeTask = () => {
   const activeTask = toRaw(state.value.activeTask);
   const worker = toRaw(state.value.worker);
-  worker.completeTask(activeTask.sid, function (error, completedTask) {
-    if (error) {
-      console.log(error.code);
-      console.log(error.message);
-      return;
-    }
-    console.log("Completed Task: " + completedTask.assignmentStatus);
+  console.log(worker, activeTask);
+  if (activeTask) {
+    worker.completeTask(activeTask.sid, function (error, completedTask) {
+      if (error) {
+        console.log(error.code);
+        console.log(error.message);
+        return;
+      }
+      console.log("Completed Task: " + completedTask.assignmentStatus);
 
-    state.value.activeTask = null;
+      state.value.activeTask = null;
 
-    toRaw(state.value.device).disconnectAll();
-  });
+      toRaw(state.value.device).disconnectAll();
+    });
+  }
+};
+
+const mergeWorkers = (newWorker) => {
+  const worker = toRaw(state.value.worker);
+  for (const property in newWorker) {
+    worker[property] = newWorker[property];
+  }
+  return worker;
 };
 
 onMounted(() => {
   login().then(() => {
     setupWorker();
-    setupWebrtc();
     fetchActivities();
+    setupWebrtc();
   });
 });
 </script>
@@ -266,14 +300,15 @@ onMounted(() => {
   <el-container>
     <el-header>
       <el-menu
+        :default-active="defaultActivityIndex"
         class="el-menu-demo"
         mode="horizontal"
         @select="changeActivity"
         :ellipsis="false"
       >
-        <el-menu-item index="0" disabled
-          ><h2>{{ status }}</h2></el-menu-item
-        >
+        <el-menu-item>
+          <h2>{{ status }}</h2>
+        </el-menu-item>
         <div class="flex-grow" />
         <el-sub-menu index="1" :disabled="state.loadings.activities">
           <template #title>{{ activityName }}</template>
